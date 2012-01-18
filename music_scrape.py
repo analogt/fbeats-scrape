@@ -23,18 +23,38 @@ def reddit():
 			each['details'] = youtube(each)
 		elif re.search(sc,each['url']):
 			each['details'] = soundcloud(each)
+		else:
+			del each
+			continue
+		for k,v in each['details'].iteritems():
+			each[k] = v
+		del each['details']
 	print songs
 
 def youtube(song):
+	details = {}
 	soup = bs(requests.get(song['url']).content)
-	views = long(soup.findAll('span',{"class":"watch-view-count"})[0].strong.string.replace(",",""))
+	details['views'] = long(soup.findAll(
+		'span',{"class":"watch-view-count"})[0].strong.string.replace(",",""))
 	add_dt = soup.findAll('span',{"class":"watch-video-date"})[0].string
 	add_dt = datetime.datetime.strptime(add_dt,'%b %d, %Y')
+	today = datetime.datetime.today()
+	days_old = (today - add_dt).days
+	
 	title = soup.findAll('span',{"id":"eow-title"})[0]['title']
+	details['title'] = title
+	details['vpd'] = details['views']/days_old
+	return details
 
-	print views, add_dt, title, song['url']
 def soundcloud(song):
-	pass
+	details = {}
+
+	soup = bs(requests.get(song['url']).content)
+	try:
+		details['views'] = long(soup.findAll('td',{"class":"total"})[0].string)
+	except:
+		details['views'] = None
+	return details
 
 if __name__ == '__main__':
 	print "running"
